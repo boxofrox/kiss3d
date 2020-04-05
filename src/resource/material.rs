@@ -2,7 +2,7 @@
 
 use camera::Camera;
 use light::Light;
-use na::{Isometry2, Isometry3, Vector2, Vector3};
+use na::{Isometry2, Isometry3, Similarity2, Vector2, Vector3};
 use planar_camera::PlanarCamera;
 use resource::{Mesh, PlanarMesh};
 use scene::{ObjectData, PlanarObjectData};
@@ -28,7 +28,7 @@ pub trait PlanarMaterial {
     /// Render the given planar mesh using this material.
     fn render(
         &mut self,
-        transform: &Isometry2<f32>,
+        transform: &Similarity2<f32>,
         scale: &Vector2<f32>,
         camera: &mut dyn PlanarCamera, // FIXME: replace those two arguments by
         data: &PlanarObjectData,
