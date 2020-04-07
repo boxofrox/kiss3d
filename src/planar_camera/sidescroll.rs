@@ -14,7 +14,7 @@ pub struct Sidescroll {
     zoom: f32,
 
     /// Increment of the zoomance per unit scrolling. The default value is 40.0.
-    zoom_step: f32,
+    pub zoom_step: f32,
     drag_button: Option<MouseButton>,
 
     view: Matrix3<f32>,
