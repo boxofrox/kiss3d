@@ -1,6 +1,6 @@
 //! Data structure of a scene node.
 
-use na::{Isometry2, Point2, Point3, Vector2};
+use na::{Point2, Point3, Similarity2, Vector2};
 use planar_camera::PlanarCamera;
 use resource::{PlanarMaterial, PlanarMesh, Texture, TextureManager};
 use std::any::Any;
@@ -115,7 +115,7 @@ impl PlanarObject {
     #[doc(hidden)]
     pub fn render(
         &self,
-        transform: &Isometry2<f32>,
+        transform: &Similarity2<f32>,
         scale: &Vector2<f32>,
         camera: &mut dyn PlanarCamera,
     ) {

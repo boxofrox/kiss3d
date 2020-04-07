@@ -1,4 +1,4 @@
-use na::{self, Isometry2, Point2, Point3, Translation2, UnitComplex, Vector2};
+use na::{self, Point2, Point3, Similarity2, Translation2, UnitComplex, Vector2};
 
 use planar_camera::PlanarCamera;
 use resource::{
@@ -16,9 +16,9 @@ use std::rc::Rc;
 /// The datas contained by a `PlanarSceneNode`.
 pub struct PlanarSceneNodeData {
     local_scale: Vector2<f32>,
-    local_transform: Isometry2<f32>,
+    local_transform: Similarity2<f32>,
     world_scale: Vector2<f32>,
-    world_transform: Isometry2<f32>,
+    world_transform: Similarity2<f32>,
     visible: bool,
     up_to_date: bool,
     children: Vec<PlanarSceneNode>,
@@ -90,7 +90,7 @@ impl PlanarSceneNodeData {
 
     fn do_render(
         &mut self,
-        transform: &Isometry2<f32>,
+        transform: &Similarity2<f32>,
         scale: &Vector2<f32>,
         camera: &mut dyn PlanarCamera,
     ) {
@@ -371,13 +371,13 @@ impl PlanarSceneNodeData {
 
     /// This node local transformation.
     #[inline]
-    pub fn local_transformation(&self) -> Isometry2<f32> {
+    pub fn local_transformation(&self) -> Similarity2<f32> {
         self.local_transform.clone()
     }
 
     /// Inverse of this node local transformation.
     #[inline]
-    pub fn inverse_local_transformation(&self) -> Isometry2<f32> {
+    pub fn inverse_local_transformation(&self) -> Similarity2<f32> {
         self.local_transform.inverse()
     }
 
@@ -387,7 +387,7 @@ impl PlanarSceneNodeData {
     /// invalidated.
     #[inline]
     #[allow(mutable_transmutes)]
-    pub fn world_transformation(&self) -> Isometry2<f32> {
+    pub fn world_transformation(&self) -> Similarity2<f32> {
         // NOTE: this is to have some kind of laziness without a `&mut self`.
         unsafe {
             let mself: &mut PlanarSceneNodeData = mem::transmute(self);
@@ -402,7 +402,7 @@ impl PlanarSceneNodeData {
     /// invalidated.
     #[inline]
     #[allow(mutable_transmutes)]
-    pub fn inverse_world_transformation(&self) -> Isometry2<f32> {
+    pub fn inverse_world_transformation(&self) -> Similarity2<f32> {
         // NOTE: this is to have some kind of laziness without a `&mut self`.
         unsafe {
             let mself: &mut PlanarSceneNodeData = mem::transmute(self);
@@ -413,21 +413,21 @@ impl PlanarSceneNodeData {
 
     /// Appends a transformation to this node local transformation.
     #[inline]
-    pub fn append_transformation(&mut self, t: &Isometry2<f32>) {
+    pub fn append_transformation(&mut self, t: &Similarity2<f32>) {
         self.invalidate();
         self.local_transform = t * self.local_transform
     }
 
     /// Prepends a transformation to this node local transformation.
     #[inline]
-    pub fn prepend_to_local_transformation(&mut self, t: &Isometry2<f32>) {
+    pub fn prepend_to_local_transformation(&mut self, t: &Similarity2<f32>) {
         self.invalidate();
         self.local_transform *= t;
     }
 
     /// Set this node local transformation.
     #[inline]
-    pub fn set_local_transformation(&mut self, t: Isometry2<f32>) {
+    pub fn set_local_transformation(&mut self, t: Similarity2<f32>) {
         self.invalidate();
         self.local_transform = t
     }
@@ -435,13 +435,13 @@ impl PlanarSceneNodeData {
     /// This node local translation.
     #[inline]
     pub fn local_translation(&self) -> Translation2<f32> {
-        self.local_transform.translation
+        self.local_transform.isometry.translation
     }
 
     /// The inverse of this node local translation.
     #[inline]
     pub fn inverse_local_translation(&self) -> Translation2<f32> {
-        self.local_transform.translation.inverse()
+        self.local_transform.isometry.translation.inverse()
     }
 
     /// Appends a translation to this node local transformation.
@@ -462,19 +462,19 @@ impl PlanarSceneNodeData {
     #[inline]
     pub fn set_local_translation(&mut self, t: Translation2<f32>) {
         self.invalidate();
-        self.local_transform.translation = t
+        self.local_transform.isometry.translation = t
     }
 
     /// This node local rotation.
     #[inline]
     pub fn local_rotation(&self) -> UnitComplex<f32> {
-        self.local_transform.rotation
+        self.local_transform.isometry.rotation
     }
 
     /// The inverse of this node local rotation.
     #[inline]
     pub fn inverse_local_rotation(&self) -> UnitComplex<f32> {
-        self.local_transform.rotation.inverse()
+        self.local_transform.isometry.rotation.inverse()
     }
 
     /// Appends a rotation to this node local transformation.
@@ -502,7 +502,7 @@ impl PlanarSceneNodeData {
     #[inline]
     pub fn set_local_rotation(&mut self, r: UnitComplex<f32>) {
         self.invalidate();
-        self.local_transform.rotation = r
+        self.local_transform.isometry.rotation = r
     }
 
     fn invalidate(&mut self) {
@@ -546,7 +546,7 @@ impl PlanarSceneNode {
     /// Creates a new scene node that is not rooted.
     pub fn new(
         local_scale: Vector2<f32>,
-        local_transform: Isometry2<f32>,
+        local_transform: Similarity2<f32>,
         object: Option<PlanarObject>,
     ) -> PlanarSceneNode {
         let data = PlanarSceneNodeData {
@@ -621,7 +621,7 @@ impl PlanarSceneNode {
     pub fn add_object(
         &mut self,
         local_scale: Vector2<f32>,
-        local_transform: Isometry2<f32>,
+        local_transform: Similarity2<f32>,
         object: PlanarObject,
     ) -> PlanarSceneNode {
         let node = PlanarSceneNode::new(local_scale, local_transform, Some(object));
@@ -935,19 +935,19 @@ impl PlanarSceneNode {
 
     /// Appends a transformation to this node local transformation.
     #[inline]
-    pub fn append_transformation(&mut self, t: &Isometry2<f32>) {
+    pub fn append_transformation(&mut self, t: &Similarity2<f32>) {
         self.data_mut().append_transformation(t)
     }
 
     /// Prepends a transformation to this node local transformation.
     #[inline]
-    pub fn prepend_to_local_transformation(&mut self, t: &Isometry2<f32>) {
+    pub fn prepend_to_local_transformation(&mut self, t: &Similarity2<f32>) {
         self.data_mut().prepend_to_local_transformation(t)
     }
 
     /// Set this node local transformation.
     #[inline]
-    pub fn set_local_transformation(&mut self, t: Isometry2<f32>) {
+    pub fn set_local_transformation(&mut self, t: Similarity2<f32>) {
         self.data_mut().set_local_transformation(t)
     }
 
